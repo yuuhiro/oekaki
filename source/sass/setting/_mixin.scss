@@ -1,0 +1,43 @@
+// ============================================================
+// スプライト画像の生成
+// $dimensions
+// true = 高さ、幅を画像ごとに計算
+// false = 画像ごとに高さ、幅を計算しない
+// $ratio 比率
+// ============================================================
+
+@mixin all-retina-sprites($map, $dimensions: false, $ratio: 2) {
+	$base-class: sprite-map-name($map);
+	$child-name: nth((sprite-names($map)),1);
+	.#{$base-class} {
+		background: sprite-url($map) no-repeat;
+		$base-width: ceil(image-width(sprite-path($map)) / $ratio);
+		background-size: $base-width auto;
+		@if not $dimensions {
+			width: ceil(image-width(sprite-file($map, $child-name)) / $ratio);
+			height: ceil(image-height(sprite-file($map, $child-name)) / $ratio);
+		}
+	}
+	@each $sprite in sprite-names($map) {
+		.#{$sprite}{
+			@if $dimensions {
+				width: ceil(image-width(sprite-file($map, $sprite)) / $ratio);
+				height: ceil(image-height(sprite-file($map, $sprite)) / $ratio);
+			}
+			$pos: sprite-position($map, $sprite);
+			background-position: ceil(nth($pos, 1) / $ratio) ceil(nth($pos, 2) / $ratio);
+		}
+	}
+}
+
+// http://howtohp.com/css/html5-placeholder-style.html
+@mixin placeholder-color($color, $weight) {
+	&:-moz-placeholder {
+		color:$color;
+		font-weight:$weight;
+	}
+	&::-webkit-input-placeholder {
+		color:$color;
+		font-weight:$weight;
+	}
+}

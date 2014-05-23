@@ -1,0 +1,44 @@
+// ============================================================
+// 設定
+// ============================================================
+
+// HTML5の場合は「true」
+$html5 : true;
+
+// compass ブラウザサポート
+$legacy-support-for-ie6 : false;
+$legacy-support-for-ie7 : false;
+
+$experimental-support-for-webkit : true;
+$experimental-support-for-mozilla : true;
+$experimental-support-for-opera : false;
+$experimental-support-for-microsoft : false;
+$experimental-support-for-khtml : false;
+
+//ie9用 svg
+$experimental-support-for-svg: false;
+
+// 画像パス
+$imgPath : "../img/";
+
+	// commonフォルダ内の画像のパス
+	$commonImgPath: "../common/images/";
+
+
+// 標準font-family
+$fontFamily : "ヒラギノ角ゴ Pro W3", "Hiragino Kaku Gothic Pro", Osaka, "ＭＳ Ｐゴシック", "MS PGothic", Sans-Serif;
+
+
+// ページの横幅
+$baseWidth : 940px;
+
+
+// 標準テキストカラー
+$textColor : #333;
+
+
+// 標準リンクカラー
+$linkColor : #06f;
+$linkColor_visited : #39f;
+$linkColor_hover : #00f;
+$linkColor_active : #00faaa;
