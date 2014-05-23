@@ -22,8 +22,10 @@ var OekakiView = Backbone.View.extend({
 		
 		this.lastX = e.pageX - this.offsetX;
 		this.lastY = e.pageY - this.offsetY;
+		this.ctx.beginPath();
 	},
 	drawEnd: function() {
+		this.ctx.closePath();
 		this.drawFlag = false;
 	},
 	draw: function(e) {
@@ -34,14 +36,13 @@ var OekakiView = Backbone.View.extend({
 		
 		this.ctx.strokeStyle = this.strokeStyle;
 		this.ctx.lineWidth = this.lineWidth;
-
-		this.ctx.beginPath();
+		
 		this.ctx.moveTo(this.lastX, this.lastY);
 		this.ctx.lineTo(x, y);
 		this.ctx.lineCap = "round";
-		this.ctx.stroke();
-		this.ctx.closePath();
 		this.ctx.lineJoin = 'round';
+		
+		this.ctx.stroke();
 		
 		this.lastX = x;
 		this.lastY = y;
