@@ -1,57 +1,103 @@
 var OekakiView = Backbone.View.extend({
-	el: "#oekaki",
+	el: "#cropBox",
 	initialize: function () {
 
-		this.canvas = this.$el.find("#oekakiCanvas")[0];
+		this.canvas = this.$el.find("#cropCanvas")[0];
 		this.ctx = this.canvas.getContext('2d');
 
 		this.offsetX = this.canvas.offsetLeft;
 		this.offsetY = this.canvas.offsetTop;
 		this.canvasWidth = this.canvas.width;
 		this.canvasHeight = this.canvas.height;
-		
+		this.image = {};
 		this.ratio = 2.3; // 縦横比
 		this.drawFlag = false;
 		this.drawMode = "";
-		this.strokeStyle = 'black';
-		this.lineWidth = 2;
+		this.ctx.strokeStyle = 'rgba(255,180,69, 1)';
+		this.ctx.fillStyle = 'hsla(0, 0%, 0%, 0.6)';
+		this.ctx.lineWidth = 2;
+		this.square = {};
+		this.square.corners = [];
+		this.limit = {};
 
-		var defaultWidth = 100;
-		var defaultHeight = defaultWidth/this.ratio;
-		this.square = {
-			width: defaultWidth,
-			height: defaultHeight,
-			corners:[
-				{
-					x: 50,
-					y: 50
-				},
-				{
-					x: 50 + defaultWidth,
-					y: 50
-				},
-				{
-					x: 50 + defaultWidth,
-					y: 50 + defaultHeight
-				},
-				{
-					x: 50,
-					y: 50 + defaultHeight
-				}
-			]
-		};
-
-		// 矩形を描画
-		this.render();
 	},
 	events: {
-		'mousedown #oekakiCanvas': 'mouseDownHandler',
-		'mousemove #oekakiCanvas': 'mouseMoveHandler',
-		'mouseup #oekakiCanvas': 'mouseUpHandler'
+		'change #cropImageSelector': 'selectImage',
+		'mousedown #cropCanvas': 'mouseDownHandler',
+		'mousemove #cropCanvas': 'mouseMoveHandler',
+		'mouseup #cropCanvas': 'mouseUpHandler'
+	},
+	selectImage: function(e) {
+		var that = this;
+		var file = e.target.files[0];
+		if (!file.type.match(/^image\/(png|jpeg|gif)$/)) return;
+
+		this.image.original = new Image();
+		var reader = new FileReader();
+
+		reader.onload = function(e) {
+			that.image.original.onload = function() {
+				if(that.image.original.width > that.image.original.height)
+				{
+					var ratio = 500/that.image.original.width;
+					var height = Math.round(that.image.original.height*ratio);
+					var y = Math.round((500 - height)/2);
+					that.image.width = 500;
+					that.image.height = height;
+					that.image.x = 0;
+					that.image.y = y;
+
+					that.square = {
+						width: that.image.width,
+						height: that.image.height,
+						corners:[
+							{
+								x: that.image.x,
+								y: that.image.y
+							},
+							{
+								x: that.image.x+that.image.width,
+								y: that.image.y
+							},
+							{
+								x: that.image.x+that.image.width,
+								y: that.image.y+that.image.height
+							},
+							{
+								x: that.image.x,
+								y: that.image.y+that.image.height
+							}
+						]
+					};
+				}
+				else
+				{
+					var ratio = 500/that.image.original.height;
+					var width = Math.round(that.image.original.width*ratio);
+					var x = Math.round((500 - width)/2);
+					that.image.width = width;
+					that.image.height = 500;
+					that.image.x = x;
+					that.image.y = 0;
+
+				}
+				that.limit = {
+					width: that.image.width,
+					height: that.image.height,
+					x: that.image.x,
+					y: that.image.y
+				};
+
+				// 描画
+				that.render();
+			}
+			that.image.original.src = e.target.result;
+		}
+		reader.readAsDataURL(file);
 	},
 	mouseDownHandler: function(e) {
 		this.drawFlag = true;
-		
+
 		// クリック時のマウスx,y座標を取得
 		this.startX = e.pageX - this.offsetX;
 		this.startY = e.pageY - this.offsetY;
@@ -202,14 +248,14 @@ var OekakiView = Backbone.View.extend({
 			height     = endPointY - basePointY;
 
 		// 基点と終点がキャンバス内をはみ出さないように
-		if((this.drawMode === 1 || this.drawMode === 3) && (basePointX <= 0 || basePointY <= 0)) return false;
-		if((this.drawMode === 2 || this.drawMode === 4) && (endPointX  >= this.canvas.width || endPointY  >= this.canvas.height)) return false;
+		if((this.drawMode === 1 || this.drawMode === 3) && (basePointX <= this.limit.x || this.limit.y <= 0)) return false;
+		if((this.drawMode === 2 || this.drawMode === 4) && (endPointX  >= this.limit.x+this.limit.width || endPointY  >= this.limit.y+this.limit.height)) return false;
 		if(this.drawMode === "move")
 		{
-			if(basePointX <= 0
-			|| basePointY <= 0
-			|| endPointX  >= this.canvas.width 
-			|| endPointY  >= this.canvas.height
+			if(basePointX <= this.limit.x
+			|| basePointY <= this.limit.y
+			|| endPointX  >= this.limit.x+this.limit.width
+			|| endPointY  >= this.limit.y+this.limit.height
 			)
 			{
 				return false;
@@ -218,8 +264,8 @@ var OekakiView = Backbone.View.extend({
 		else
 		{
 			// minimumチェック
-			if(width <= 50 && height <= 50/this.ratio) return false;
-			
+			if(width <= 50 || height <= 50/this.ratio) return false;
+
 		}
 		return true;
 	},
@@ -228,14 +274,31 @@ var OekakiView = Backbone.View.extend({
 		var basePointY = this.square.corners[0].y;
 		var endPointX  = this.square.corners[2].x;
 		var endPointY  = this.square.corners[2].y;
-		var width      = endPointX - basePointX;
-		var height     = endPointY - basePointY;
-
-		this.ctx.strokeStyle = this.strokeStyle;
-		this.ctx.lineWidth = this.lineWidth;
+		var width      = Math.round(endPointX - basePointX);
+		var height     = Math.round(endPointY - basePointY);
 
 		// 以前の矩形が残っているので、一度canvasをクリアする
 		this.ctx.clearRect(0, 0, this.canvasWidth, this.canvasHeight);
+
+		// 画像の描画
+		this.ctx.drawImage(this.image.original, this.image.x, this.image.y, this.image.width, this.image.height);
+
+		//くり抜き
+		this.ctx.beginPath();
+		this.ctx.moveTo(0, 0);
+		this.ctx.lineTo(this.canvasWidth, 0);
+		this.ctx.lineTo(this.canvasWidth, this.canvasHeight);
+		this.ctx.lineTo(this.square.corners[1].x, this.canvasHeight);
+		this.ctx.lineTo(this.square.corners[1].x, this.square.corners[1].y);
+		this.ctx.lineTo(this.square.corners[0].x, this.square.corners[0].y);
+		this.ctx.lineTo(this.square.corners[0].x, this.square.corners[3].y);
+		this.ctx.lineTo(this.square.corners[2].x, this.square.corners[2].y);
+		this.ctx.lineTo(this.square.corners[2].x, this.canvasHeight);
+		this.ctx.lineTo(0, this.canvasHeight);
+		this.ctx.closePath();
+		this.ctx.fill();
+
+		// 枠線
 		this.ctx.strokeRect(basePointX, basePointY, width, height);
 
 		// 矩形の幅、高さと四隅の座標を格納
